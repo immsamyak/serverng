@@ -1,8 +1,8 @@
-FROM node:20-alpine AS builder
+FROM node:20-slim AS builder
 
 WORKDIR /app
 
-RUN apk add --no-cache python3 make g++ openssl
+RUN apt-get update && apt-get install -y python3 make g++ openssl
 
 COPY package.json package-lock.json tsconfig.base.json ./
 COPY packages ./packages
@@ -12,7 +12,7 @@ RUN npm ci
 RUN npm run build:packages
 RUN npm run build:api
 
-FROM node:20-alpine AS runner
+FROM node:20-slim AS runner
 
 WORKDIR /app
 
