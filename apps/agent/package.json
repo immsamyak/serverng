@@ -1,0 +1,25 @@
+{
+    "name": "@servermg/agent",
+    "version": "1.0.0",
+    "private": true,
+    "scripts": {
+        "build": "tsc",
+        "start": "node dist/index.js",
+        "dev": "ts-node src/index.ts"
+    },
+    "dependencies": {
+        "@servermg/logger": "*",
+        "@servermg/shared-types": "*",
+        "axios": "^1.6.2",
+        "socket.io-client": "^4.7.2",
+        "systeminformation": "^5.21.22",
+        "dockerode": "^3.3.5",
+        "dotenv": "^16.3.1"
+    },
+    "devDependencies": {
+        "typescript": "^5.3.2",
+        "ts-node": "^10.9.1",
+        "@types/node": "^20.10.0",
+        "@types/dockerode": "^3.3.23"
+    }
+}
