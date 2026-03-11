@@ -14,6 +14,7 @@
     "dev:agent": "npm run dev -w apps/agent",
     "build:api": "npm run build -w apps/api",
     "build:dashboard": "npm run build -w apps/dashboard",
+    "build:agent": "npm run build -w apps/agent",
     "build:packages": "npm run build -w packages/shared-types && npm run build -w packages/logger && npm run build -w packages/auth",
     "build:all": "npm run build:packages && npm run build:api && npm run build:dashboard && npm run build:agent",
     "db:migrate": "npm run db:migrate -w apps/api",
