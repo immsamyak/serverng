@@ -13,6 +13,7 @@ COPY apps/agent ./apps/agent
 # Install dependencies and build shared packages + agent
 RUN npm ci
 RUN npm run build:packages
+RUN npm run build:agent
 
 FROM node:20-alpine AS runner
 
