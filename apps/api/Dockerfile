@@ -2,6 +2,9 @@ FROM node:20-slim AS builder
 
 WORKDIR /app
 
+ENV PRISMA_CLI_QUERY_ENGINE_TYPE=binary
+ENV PRISMA_CLIENT_ENGINE_TYPE=binary
+
 RUN apt-get update && apt-get install -y python3 make g++ openssl
 
 COPY package.json package-lock.json tsconfig.base.json ./
@@ -15,6 +18,9 @@ RUN npm run build:api
 FROM node:20-slim AS runner
 
 WORKDIR /app
+
+ENV PRISMA_CLI_QUERY_ENGINE_TYPE=binary
+ENV PRISMA_CLIENT_ENGINE_TYPE=binary
 
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/packages ./packages
