@@ -2,8 +2,7 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Install build dependencies
-RUN apk add --no-cache python3 make g++
+RUN apk add --no-cache python3 make g++ openssl
 
 COPY package.json package-lock.json tsconfig.base.json ./
 COPY packages ./packages
