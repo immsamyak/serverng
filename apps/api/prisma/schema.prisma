@@ -1,0 +1,267 @@
+// Prisma Schema for ServerMG Platform
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// Users & Organizations
+// ============================================
+
+model User {
+  id             String   @id @default(uuid())
+  email          String   @unique
+  password       String
+  name           String
+  avatar         String?
+  role           String   @default("member") // admin, owner, member, viewer
+  githubId       String?  @unique
+  githubToken    String?
+  apiToken       String?  @unique
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  teamMembers    TeamMember[]
+  deployments    Deployment[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([email])
+  @@index([organizationId])
+}
+
+model Organization {
+  id          String   @id @default(uuid())
+  name        String
+  slug        String   @unique
+  plan        String   @default("free") // free, starter, pro, enterprise
+  ownerId     String
+  users       User[]
+  projects    Project[]
+  databases   Database[]
+  teamMembers TeamMember[]
+  billing     BillingSubscription?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([slug])
+}
+
+model TeamMember {
+  id             String   @id @default(uuid())
+  userId         String
+  organizationId String
+  role           String   @default("member")
+  invitedBy      String?
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  joinedAt       DateTime @default(now())
+
+  @@unique([userId, organizationId])
+  @@index([organizationId])
+}
+
+// ============================================
+// Projects & Deployments
+// ============================================
+
+model Project {
+  id              String   @id @default(uuid())
+  name            String
+  slug            String
+  description     String?
+  gitUrl          String
+  branch          String   @default("main")
+  framework       String   @default("nodejs") // nodejs, nextjs, react, django, fastapi, laravel, docker, static
+  buildCommand    String?
+  startCommand    String?
+  port            Int      @default(3000)
+  dockerfilePath  String?
+  organizationId  String
+  serverId        String?
+  containerId     String?
+  containerPort   Int?
+  status          String   @default("stopped") // queued, building, deploying, running, failed, stopped
+  organization    Organization     @relation(fields: [organizationId], references: [id])
+  server          Server?          @relation(fields: [serverId], references: [id])
+  deployments     Deployment[]
+  domains         Domain[]
+  databases       Database[]
+  envVars         EnvironmentVariable[]
+  logs            Log[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([slug, organizationId])
+  @@index([organizationId])
+  @@index([serverId])
+}
+
+model Deployment {
+  id            String   @id @default(uuid())
+  projectId     String
+  status        String   @default("queued") // queued, building, deploying, running, failed, stopped, cancelled
+  commitSha     String?
+  commitMessage String?
+  branch        String   @default("main")
+  buildLogs     String   @default("")
+  buildDuration Int?     // seconds
+  imageId       String?
+  triggeredBy   String?
+  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user          User?    @relation(fields: [triggeredBy], references: [id])
+  logs          Log[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([status])
+}
+
+// ============================================
+// Servers
+// ============================================
+
+model Server {
+  id             String   @id @default(uuid())
+  name           String
+  hostname       String
+  ipAddress      String
+  status         String   @default("offline") // online, offline, maintenance, error
+  agentKey       String   @unique
+  cpuUsage       Float?
+  ramUsage       Float?
+  ramTotal       Float?
+  diskUsage      Float?
+  diskTotal      Float?
+  containerCount Int      @default(0)
+  os             String?
+  projects       Project[]
+  logs           Log[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([ipAddress])
+}
+
+// ============================================
+// Domains & SSL
+// ============================================
+
+model Domain {
+  id                String   @id @default(uuid())
+  name              String   @unique
+  projectId         String
+  sslStatus         String   @default("pending") // pending, active, expired, failed
+  sslCertificateId  String?
+  isVerified        Boolean  @default(false)
+  verificationToken String?
+  project           Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sslCertificate    SslCertificate? @relation(fields: [sslCertificateId], references: [id])
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([projectId])
+}
+
+model SslCertificate {
+  id        String   @id @default(uuid())
+  domain    String
+  issuer    String   @default("letsencrypt")
+  certPath  String?
+  keyPath   String?
+  autoRenew Boolean  @default(true)
+  domains   Domain[]
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ============================================
+// Databases (User-created)
+// ============================================
+
+model Database {
+  id             String   @id @default(uuid())
+  name           String
+  engine         String   // postgresql, mysql, mongodb, redis
+  host           String
+  port           Int
+  username       String
+  password       String
+  databaseName   String
+  containerId    String?
+  projectId      String?
+  organizationId String
+  sizeBytes      BigInt   @default(0)
+  project        Project?     @relation(fields: [projectId], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([organizationId])
+}
+
+// ============================================
+// Environment Variables
+// ============================================
+
+model EnvironmentVariable {
+  id        String   @id @default(uuid())
+  key       String
+  value     String
+  projectId String
+  isSecret  Boolean  @default(false)
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([key, projectId])
+  @@index([projectId])
+}
+
+// ============================================
+// Logs
+// ============================================
+
+model Log {
+  id           String   @id @default(uuid())
+  type         String   // build, deploy, app, server, nginx, error
+  message      String
+  source       String   @default("system")
+  level        String   @default("info") // info, warn, error, debug
+  projectId    String?
+  deploymentId String?
+  serverId     String?
+  project      Project?    @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  deployment   Deployment? @relation(fields: [deploymentId], references: [id], onDelete: SetNull)
+  server       Server?     @relation(fields: [serverId], references: [id], onDelete: SetNull)
+  timestamp    DateTime @default(now())
+
+  @@index([projectId])
+  @@index([deploymentId])
+  @@index([serverId])
+  @@index([type])
+  @@index([timestamp])
+}
+
+// ============================================
+// Billing
+// ============================================
+
+model BillingSubscription {
+  id                    String   @id @default(uuid())
+  organizationId        String   @unique
+  plan                  String   @default("free")
+  status                String   @default("active") // active, cancelled, past_due, trialing
+  stripeCustomerId      String?
+  stripeSubscriptionId  String?
+  currentPeriodStart    DateTime @default(now())
+  currentPeriodEnd      DateTime @default(now())
+  organization          Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}

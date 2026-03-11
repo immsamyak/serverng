@@ -1,0 +1,28 @@
+{
+  "name": "servermg",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Self-hosted SaaS hosting platform",
+  "workspaces": [
+    "packages/*",
+    "apps/*",
+    "services/*"
+  ],
+  "scripts": {
+    "dev:api": "npm run dev -w apps/api",
+    "dev:dashboard": "npm run dev -w apps/dashboard",
+    "dev:agent": "npm run dev -w apps/agent",
+    "build:api": "npm run build -w apps/api",
+    "build:dashboard": "npm run build -w apps/dashboard",
+    "build:agent": "npm run build -w apps/agent",
+    "build:packages": "npm run build -w packages/shared-types && npm run build -w packages/logger && npm run build -w packages/auth",
+    "build:all": "npm run build:packages && npm run build:api && npm run build:dashboard && npm run build:agent",
+    "db:migrate": "npm run db:migrate -w apps/api",
+    "db:seed": "npm run db:seed -w apps/api",
+    "lint": "npm run lint --workspaces --if-present",
+    "clean": "rm -rf node_modules packages/*/dist apps/*/dist services/*/dist"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
