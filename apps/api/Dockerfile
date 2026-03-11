@@ -11,7 +11,7 @@ COPY package.json package-lock.json tsconfig.base.json ./
 COPY packages ./packages
 COPY apps/api ./apps/api
 
-RUN npm ci
+RUN rm -rf node_modules && npm ci
 RUN npm run build:packages
 RUN npm run build:api
 
@@ -21,6 +21,7 @@ WORKDIR /app
 
 ENV PRISMA_CLI_QUERY_ENGINE_TYPE=binary
 ENV PRISMA_CLIENT_ENGINE_TYPE=binary
+ENV PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
 
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/packages ./packages
