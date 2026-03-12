@@ -2,10 +2,8 @@ FROM node:20-slim AS builder
 
 WORKDIR /app
 
-ENV PRISMA_CLI_QUERY_ENGINE_TYPE=binary
-ENV PRISMA_CLIENT_ENGINE_TYPE=binary
-
-RUN apt-get update && apt-get install -y python3 make g++ openssl
+# Install openssl and libssl-dev so Prisma can detect the correct OpenSSL 3.0.x version
+RUN apt-get update && apt-get install -y python3 make g++ openssl libssl-dev
 
 COPY package.json package-lock.json tsconfig.base.json ./
 COPY packages ./packages
@@ -19,9 +17,8 @@ FROM node:20-slim AS runner
 
 WORKDIR /app
 
-ENV PRISMA_CLI_QUERY_ENGINE_TYPE=binary
-ENV PRISMA_CLIENT_ENGINE_TYPE=binary
-ENV PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
+# Install openssl and libssl-dev in the runner so `npx prisma generate` detects OpenSSL 3.0.x
+RUN apt-get update && apt-get install -y openssl libssl-dev && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/packages ./packages
